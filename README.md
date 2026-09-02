@@ -10,7 +10,8 @@ A full-stack, Trello-like task management application with role-based access con
 
 | | URL |
 |---|---|
-| **Frontend App** | https://taskboard-msj4u8exx-dilsath.vercel.app |
+| **Frontend Web App** | https://taskboard-oeon.vercel.app |
+| **Backend REST API** | https://taskboard-dilsath.vercel.app/api |
 | **GitHub Repository** | https://github.com/Dilsath0512/taskboard |
 
 **Admin Credentials:**
