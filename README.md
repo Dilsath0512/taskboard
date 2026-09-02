@@ -10,10 +10,10 @@ A full-stack, Trello-like task management application with role-based access con
 
 | | URL |
 |---|---|
-| **Frontend** | https://your-frontend.vercel.app |
-| **Backend API** | https://your-backend.onrender.com |
+| **Frontend App** | https://taskboard-msj4u8exx-dilsath.vercel.app |
+| **GitHub Repository** | https://github.com/Dilsath0512/taskboard |
 
-**Admin Login:**
+**Admin Credentials:**
 - Email: `admin@taskboard.com`
 - Password: `Admin@1234`
 
