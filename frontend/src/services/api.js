@@ -42,5 +42,6 @@ export const deleteTask = (id) => API.delete(`/tasks/${id}`);
 // Users (admin)
 export const getAllUsers = () => API.get('/users');
 export const updateUserRole = (id, role) => API.put(`/users/${id}/role`, { role });
+export const deleteUser = (id) => API.delete(`/users/${id}`);
 
 export default API;

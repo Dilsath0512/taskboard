@@ -48,4 +48,24 @@ const updateUserRole = async (req, res) => {
   }
 };
 
-module.exports = { getAllUsers, updateUserRole };
+// DELETE /api/users/:id  (admin only)
+const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  if (id === req.user.id) {
+    return res.status(400).json({ error: 'You cannot delete your own account.' });
+  }
+
+  try {
+    const result = await pool.query('DELETE FROM users WHERE id = $1 RETURNING id, name', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    res.json({ message: 'User deleted successfully.' });
+  } catch (err) {
+    console.error('DeleteUser error:', err);
+    res.status(500).json({ error: 'Failed to delete user.' });
+  }
+};
+
+module.exports = { getAllUsers, updateUserRole, deleteUser };

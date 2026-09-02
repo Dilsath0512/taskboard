@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getAllUsers, getTasks, assignTask, updateTask, deleteTask, updateUserRole } from '../services/api';
+import { getAllUsers, getTasks, assignTask, updateTask, deleteTask, updateUserRole, deleteUser } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import Navbar from '../components/Navbar';
@@ -69,6 +69,20 @@ export default function AdminDashboard() {
       toast.success('Role updated!');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update role.');
+    }
+  };
+
+  const handleDeleteUser = async (userId, userName) => {
+    if (!window.confirm(`Are you sure you want to delete user "${userName}"?`)) return;
+    try {
+      await deleteUser(userId);
+      setUsers(prev => prev.filter(u => u.id !== userId));
+      // Refresh tasks in case user's assigned tasks changed
+      const tasksRes = await getTasks();
+      setTasks(tasksRes.data.tasks);
+      toast.success(`User "${userName}" deleted successfully.`);
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to delete user.');
     }
   };
 
@@ -292,15 +306,24 @@ export default function AdminDashboard() {
                         </td>
                         <td>
                           {u.id !== user.id ? (
-                            <select
-                              className="form-select"
-                              value={u.role}
-                              onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                              style={{ padding: '4px 28px 4px 10px', fontSize: 12, width: 'auto' }}
-                            >
-                              <option value="user">User</option>
-                              <option value="admin">Admin</option>
-                            </select>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                              <select
+                                className="form-select"
+                                value={u.role}
+                                onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                                style={{ padding: '4px 28px 4px 10px', fontSize: 12, width: 'auto' }}
+                              >
+                                <option value="user">User</option>
+                                <option value="admin">Admin</option>
+                              </select>
+                              <button
+                                className="btn btn-danger btn-sm"
+                                onClick={() => handleDeleteUser(u.id, u.name)}
+                                title={`Delete user ${u.name}`}
+                              >
+                                🗑️ Remove
+                              </button>
+                            </div>
                           ) : (
                             <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>
                           )}
