@@ -164,22 +164,22 @@ Frontend will be running at: `http://localhost:5173`
 
 ### Backend (`backend/.env`)
 
-| Variable | Description | Required |
-|---|---|---|
-| `DATABASE_URL` | PostgreSQL connection string | ✅ |
-| `JWT_SECRET` | Secret key for JWT signing (min 32 chars) | ✅ |
-| `PORT` | Server port (default: 5000) | ❌ |
-| `NODE_ENV` | `development` or `production` | ❌ |
-| `FRONTEND_URL` | Frontend URL for CORS | ✅ |
-| `ADMIN_NAME` | Admin display name for seeder | ❌ |
-| `ADMIN_EMAIL` | Admin email for seeder | ❌ |
-| `ADMIN_PASSWORD` | Admin password for seeder | ❌ |
+| Variable | Description | Requirement | Default |
+|---|---|---|---|
+| `DATABASE_URL` | PostgreSQL connection string | **Required** | — |
+| `JWT_SECRET` | Secret key for JWT signing | **Required** | `12345678` |
+| `PORT` | Server port | Optional | `5000` |
+| `NODE_ENV` | Environment mode (`development` / `production`) | Optional | `development` |
+| `FRONTEND_URL` | Frontend URL for CORS | Optional | `*` |
+| `ADMIN_NAME` | Admin display name for seeder | Optional | `Admin` |
+| `ADMIN_EMAIL` | Admin email for seeder | Optional | `admin@taskboard.com` |
+| `ADMIN_PASSWORD` | Admin password for seeder | Optional | `Admin@1234` |
 
 ### Frontend (`frontend/.env`)
 
-| Variable | Description | Required |
-|---|---|---|
-| `VITE_API_URL` | Backend API base URL | ✅ |
+| Variable | Description | Requirement | Default |
+|---|---|---|---|
+| `VITE_API_URL` | Backend API base URL | **Required** | `https://taskboard-dilsath.vercel.app/api` |
 
 ---
 
