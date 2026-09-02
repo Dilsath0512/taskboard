@@ -15,6 +15,7 @@ const KanbanIcon = () => (
 export default function Login() {
   const [tab, setTab] = useState('login');
   const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { loginUser } = useAuth();
@@ -40,7 +41,10 @@ export default function Login() {
       loginUser(token, user);
       navigate(user.role === 'admin' ? '/admin' : '/board');
     } catch (err) {
-      setError(err.response?.data?.error || 'Something went wrong. Please try again.');
+      console.error('Auth error:', err);
+      const serverMsg = err.response?.data?.error;
+      const statusMsg = err.response ? `(${err.response.status}) ${serverMsg || 'Authentication failed'}` : null;
+      setError(serverMsg || statusMsg || err.message || 'Connection failed. Please check your network.');
     } finally {
       setLoading(false);
     }
@@ -105,17 +109,27 @@ export default function Login() {
 
           <div className="form-group">
             <label className="form-label">Password</label>
-            <input
-              id={tab === 'login' ? 'login-password' : 'register-password'}
-              className="form-input"
-              type="password"
-              name="password"
-              placeholder="••••••••"
-              value={formData.password}
-              onChange={handleChange}
-              required
-              minLength={6}
-            />
+            <div className="password-input-wrapper">
+              <input
+                id={tab === 'login' ? 'login-password' : 'register-password'}
+                className="form-input"
+                type={showPassword ? 'text' : 'password'}
+                name="password"
+                placeholder="••••••••"
+                value={formData.password}
+                onChange={handleChange}
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword(!showPassword)}
+                title={showPassword ? 'Hide password' : 'Show password'}
+              >
+                {showPassword ? '👁️' : '🙈'}
+              </button>
+            </div>
           </div>
 
           {error && (
