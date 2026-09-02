@@ -1183,28 +1183,158 @@ tbody td {
 /* ─── Responsive Adjustments ────────────────────────────── */
 .mobile-top-bar {
   display: none;
-  padding: 12px 20px;
+  padding: 12px 16px;
   background-color: var(--bg-sidebar);
   border-bottom: 1px solid var(--border-subtle);
   align-items: center;
   justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.sidebar-backdrop {
+  display: none;
 }
 
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 1001;
+    width: 260px;
     transform: translateX(-100%);
+    box-shadow: var(--shadow-lg);
   }
+  
   .sidebar.open {
     transform: translateX(0);
   }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .sidebar-backdrop.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
   .mobile-top-bar {
     display: flex;
   }
+
   .auth-sidebar {
     display: none;
   }
+
   .page-container {
-    padding: 20px 16px;
+    padding: 16px 12px;
+    gap: 20px;
+  }
+
+  /* Kanban Horizontal Touch Scroll on Mobile */
+  .kanban-board {
+    display: flex;
+    grid-template-columns: none;
+    overflow-x: auto;
+    gap: 14px;
+    padding-bottom: 16px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .kanban-column {
+    min-width: 85vw;
+    width: 85vw;
+    max-width: 320px;
+    flex-shrink: 0;
+    scroll-snap-align: start;
+    min-height: 420px;
+  }
+
+  .analytics-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .page-actions {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+
+  .search-wrapper,
+  .search-input {
+    width: 100% !important;
+  }
+
+  .page-actions select,
+  .page-actions .btn {
+    width: 100% !important;
+    justify-content: center;
+  }
+
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+
+  .stat-card {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .stat-value {
+    font-size: 18px;
+  }
+
+  .stat-icon-box {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Table horizontal scroll & compact padding */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  table {
+    min-width: 600px;
+  }
+
+  tbody td, thead th {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .auth-main {
+    padding: 24px 16px;
+  }
+
+  .auth-card {
+    max-width: 100%;
+  }
+
+  .modal {
+    max-width: 95vw;
+    margin: 10px;
   }
 }

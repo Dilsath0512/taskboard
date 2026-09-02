@@ -23,6 +23,11 @@ export default function Layout({ children }) {
         </button>
       </div>
 
+      <div
+        className={`sidebar-backdrop ${mobileOpen ? 'open' : ''}`}
+        onClick={() => setMobileOpen(false)}
+      />
+
       <Sidebar isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
 
       <main className="main-content">
