@@ -1,5 +1,7 @@
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const pool = require('../config/db');
+
+const uuidv4 = () => crypto.randomUUID();
 
 // GET /api/tasks
 // Normal user: sees their own tasks (created or assigned)

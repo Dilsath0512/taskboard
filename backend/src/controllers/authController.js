@@ -1,7 +1,9 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { v4: uuidv4 } = require('uuid');
+const crypto = require('crypto');
 const pool = require('../config/db');
+
+const generateUUID = () => crypto.randomUUID();
 
 // POST /api/auth/register
 const register = async (req, res) => {
@@ -17,13 +19,13 @@ const register = async (req, res) => {
 
   try {
     // Check if email already exists
-    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase()]);
+    const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email.toLowerCase().trim()]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ error: 'Email is already registered.' });
     }
 
     const password_hash = await bcrypt.hash(password, 12);
-    const id = uuidv4();
+    const id = generateUUID();
 
     const result = await pool.query(
       `INSERT INTO users (id, name, email, password_hash, role)
@@ -35,7 +37,7 @@ const register = async (req, res) => {
     const user = result.rows[0];
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, name: user.name },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'secretkey123',
       { expiresIn: '7d' }
     );
 
@@ -46,7 +48,7 @@ const register = async (req, res) => {
     });
   } catch (err) {
     console.error('Register error:', err);
-    res.status(500).json({ error: 'Server error during registration.' });
+    res.status(500).json({ error: err.message || 'Server error during registration.' });
   }
 };
 
