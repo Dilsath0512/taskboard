@@ -321,36 +321,29 @@ export default function AdminDashboard() {
                     <td style={{ color: 'var(--text-muted)' }}>
                       {new Date(u.created_at).toLocaleDateString()}
                     </td>
-                    <td style={{ textAlign: 'right', position: 'relative' }}>
+                    <td style={{ textAlign: 'right' }}>
                       {u.id !== user.id ? (
-                        <div>
-                          <button
-                            className="btn btn-ghost btn-icon btn-sm"
-                            onClick={() => setActiveMenuId(activeMenuId === u.id ? null : u.id)}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 8 }}>
+                          <select
+                            className="form-select"
+                            value={u.role}
+                            onChange={(e) => handleRoleChange(u.id, e.target.value)}
+                            style={{ padding: '4px 24px 4px 8px', fontSize: 11, width: 'auto' }}
                           >
-                            <MoreVertical size={15} />
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                          <button
+                            className="btn btn-danger btn-sm"
+                            onClick={() => handleDeleteUser(u.id, u.name)}
+                            title="Remove User"
+                          >
+                            <Trash2 size={13} />
+                            <span>Remove</span>
                           </button>
-                          {activeMenuId === u.id && (
-                            <div className="dropdown-menu">
-                              <button
-                                className="dropdown-item"
-                                onClick={() => handleRoleChange(u.id, u.role === 'admin' ? 'user' : 'admin')}
-                              >
-                                <Shield size={13} />
-                                <span>Make {u.role === 'admin' ? 'User' : 'Admin'}</span>
-                              </button>
-                              <button
-                                className="dropdown-item danger"
-                                onClick={() => handleDeleteUser(u.id, u.name)}
-                              >
-                                <Trash2 size={13} />
-                                <span>Remove User</span>
-                              </button>
-                            </div>
-                          )}
                         </div>
                       ) : (
-                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                        <span style={{ color: 'var(--text-muted)', fontSize: 12 }}>—</span>
                       )}
                     </td>
                   </tr>
