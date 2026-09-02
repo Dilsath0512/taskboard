@@ -47,35 +47,35 @@ export default function Login() {
       <div className="auth-sidebar">
         <div className="auth-brand">
           <div className="sidebar-logo-icon">
-            <Kanban size={16} />
+            <Kanban size={15} strokeWidth={1.75} />
           </div>
-          <span className="sidebar-logo-text" style={{ fontSize: 16 }}>TaskFlow</span>
+          <span className="sidebar-logo-text">TaskFlow</span>
         </div>
 
         <div className="auth-hero-content">
-          <h1 className="auth-hero-title">Organize work. Move faster.</h1>
+          <h1 className="auth-hero-title">Work with clarity.<br />Move with momentum.</h1>
           <p className="auth-hero-desc">
-            A modern, minimal task management board designed for clarity, focus, and team velocity.
+            A minimal, professional workspace for task management, team collaboration, and execution.
           </p>
 
           <div className="auth-features">
             <div className="auth-feature-item">
-              <CheckCircle2 className="auth-feature-icon" />
-              <span>Native drag-and-drop workflow tracking</span>
+              <CheckCircle2 className="auth-feature-icon" strokeWidth={1.75} />
+              <span>Intuitive drag-and-drop task tracking</span>
             </div>
             <div className="auth-feature-item">
-              <Layers className="auth-feature-icon" />
-              <span>Role-based access control and admin controls</span>
+              <Layers className="auth-feature-icon" strokeWidth={1.75} />
+              <span>Granular role-based user management</span>
             </div>
             <div className="auth-feature-item">
-              <ShieldCheck className="auth-feature-icon" />
-              <span>Secure JWT authentication & encrypted data</span>
+              <ShieldCheck className="auth-feature-icon" strokeWidth={1.75} />
+              <span>Secure JWT authentication & real-time updates</span>
             </div>
           </div>
         </div>
 
-        <div style={{ fontSize: 12, color: 'var(--text-muted)', zIndex: 1 }}>
-          © {new Date().getFullYear()} TaskFlow Inc. All rights reserved.
+        <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+          © {new Date().getFullYear()} TaskFlow Inc.
         </div>
       </div>
 
@@ -86,7 +86,7 @@ export default function Login() {
             <h2>{tab === 'login' ? 'Welcome back' : 'Create an account'}</h2>
             <p>
               {tab === 'login'
-                ? 'Sign in to access your workspace'
+                ? 'Sign in to continue to your workspace'
                 : 'Get started with TaskFlow today'}
             </p>
           </div>
@@ -157,7 +157,7 @@ export default function Login() {
                   onClick={() => setShowPassword(!showPassword)}
                   title={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  {showPassword ? <EyeOff size={15} strokeWidth={1.75} /> : <Eye size={15} strokeWidth={1.75} />}
                 </button>
               </div>
             </div>
@@ -173,14 +173,14 @@ export default function Login() {
               className="btn btn-primary btn-lg"
               type="submit"
               disabled={loading}
-              style={{ width: '100%', marginTop: 8 }}
+              style={{ width: '100%', marginTop: 6 }}
             >
               {loading ? (
                 'Processing...'
               ) : (
                 <>
                   <span>{tab === 'login' ? 'Sign In' : 'Create Account'}</span>
-                  <ArrowRight size={16} />
+                  <ArrowRight size={15} strokeWidth={1.75} />
                 </>
               )}
             </button>
