@@ -52,6 +52,8 @@ const register = async (req, res) => {
   }
 };
 
+const JWT_SECRET = process.env.JWT_SECRET || '12345678';
+
 // POST /api/auth/login
 const login = async (req, res) => {
   const { email, password } = req.body;
@@ -79,7 +81,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role, name: user.name },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
 
@@ -90,7 +92,7 @@ const login = async (req, res) => {
     });
   } catch (err) {
     console.error('Login error:', err);
-    res.status(500).json({ error: 'Server error during login.' });
+    res.status(500).json({ error: err.message || 'Server error during login.' });
   }
 };
 
