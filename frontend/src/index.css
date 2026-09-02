@@ -106,6 +106,14 @@ a {
   width: 100%;
 }
 
+.main-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+}
+
 .main-content {
   flex: 1;
   display: flex;
@@ -1191,6 +1199,7 @@ tbody td {
   position: sticky;
   top: 0;
   z-index: 100;
+  width: 100%;
 }
 
 .sidebar-backdrop {
@@ -1198,11 +1207,19 @@ tbody td {
 }
 
 @media (max-width: 768px) {
+  .app-layout {
+    flex-direction: column;
+    width: 100%;
+  }
+
   .sidebar {
     position: fixed;
     top: 0; left: 0; bottom: 0;
     z-index: 1001;
     width: 260px;
+    max-width: 80vw;
+    height: 100vh;
+    height: 100dvh;
     transform: translateX(-100%);
     box-shadow: var(--shadow-lg);
   }
@@ -1238,27 +1255,27 @@ tbody td {
 
   .page-container {
     padding: 16px 12px;
-    gap: 20px;
+    gap: 16px;
+    width: 100%;
+    max-width: 100vw;
+    box-sizing: border-box;
   }
 
-  /* Kanban Horizontal Touch Scroll on Mobile */
+  /* Kanban Board Vertical Stack on Smartphones for 100% full width per column */
   .kanban-board {
     display: flex;
+    flex-direction: column;
     grid-template-columns: none;
-    overflow-x: auto;
-    gap: 14px;
-    padding-bottom: 16px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
+    gap: 16px;
+    width: 100%;
   }
 
   .kanban-column {
-    min-width: 85vw;
-    width: 85vw;
-    max-width: 320px;
-    flex-shrink: 0;
-    scroll-snap-align: start;
-    min-height: 420px;
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    min-height: auto;
+    box-sizing: border-box;
   }
 
   .analytics-card {
@@ -1271,6 +1288,11 @@ tbody td {
     flex-direction: column;
     align-items: stretch;
     gap: 14px;
+    width: 100%;
+  }
+
+  .page-title-group h2 {
+    font-size: 18px;
   }
 
   .page-actions {
@@ -1312,12 +1334,13 @@ tbody td {
 
   /* Table horizontal scroll & compact padding */
   .table-container {
+    width: 100%;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
   }
 
   table {
-    min-width: 600px;
+    min-width: 550px;
   }
 
   tbody td, thead th {
