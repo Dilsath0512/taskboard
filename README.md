@@ -184,23 +184,19 @@ Frontend will be running at: `http://localhost:5173`
 
 ## 🌐 Deployment
 
-### Backend → Render
+### Backend & Frontend → Vercel
 
-1. Push code to GitHub
-2. Create a new **Web Service** on Render, connect your GitHub repo
-3. Set **Root Directory** to `backend`
-4. Set **Build Command**: `npm install`
-5. Set **Start Command**: `node server.js`
-6. Add all environment variables from `backend/.env`
-7. Deploy and copy the URL (e.g., `https://taskflow-api.onrender.com`)
-8. Run the seed: in Render Shell → `node seed.js`
+1. **Backend Deployment**:
+   - Import GitHub repository on Vercel
+   - Set **Root Directory** to `backend`
+   - Add environment variables (`DATABASE_URL`, `JWT_SECRET`, `NODE_ENV=production`)
+   - Deploy and copy API URL
 
-### Frontend → Vercel
-
-1. Create a new project on Vercel, connect your GitHub repo
-2. Set **Root Directory** to `frontend`
-3. Add environment variable: `VITE_API_URL=https://taskflow-api.onrender.com/api`
-4. Deploy
+2. **Frontend Deployment**:
+   - Import GitHub repository on Vercel
+   - Set **Root Directory** to `frontend`
+   - Add environment variable `VITE_API_URL` pointing to backend API URL + `/api`
+   - Deploy
 
 ---
 
