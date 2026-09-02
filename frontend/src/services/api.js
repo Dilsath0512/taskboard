@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'https://taskboard-dilsath.vercel.app/api',
+  baseURL: 'https://taskboard-dilsath.vercel.app/api',
 });
 
 // Attach token to every request
