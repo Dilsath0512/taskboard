@@ -1,63 +1,52 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getTasks, createTask, updateTask, assignTask, deleteTask } from '../services/api';
+import { getTasks, createTask, updateTask, deleteTask, assignTask, getAllUsers } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import toast from 'react-hot-toast';
-import TaskModal from '../components/TaskModal';
 import KanbanBoard from '../components/KanbanBoard';
-import Navbar from '../components/Navbar';
+import TaskModal from '../components/TaskModal';
+import Layout from '../components/Layout';
+import toast from 'react-hot-toast';
+import { Plus, Search, Filter } from 'lucide-react';
 
 export default function Board() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterAssignee, setFilterAssignee] = useState('all');
+
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
 
-  const fetchTasks = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     try {
-      const res = await getTasks();
-      setTasks(res.data.tasks);
-    } catch {
+      const tasksRes = await getTasks();
+      setTasks(tasksRes.data.tasks);
+
+      if (user?.role === 'admin') {
+        const usersRes = await getAllUsers();
+        setUsers(usersRes.data.users);
+      }
+    } catch (err) {
+      console.error('Error fetching data:', err);
       toast.error('Failed to load tasks.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
-  useEffect(() => { fetchTasks(); }, [fetchTasks]);
-
-  const handleCreateTask = async (data) => {
-    try {
-      const res = await createTask(data);
-      setTasks(prev => [res.data.task, ...prev]);
-      toast.success('Task created!');
-      setShowModal(false);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to create task.');
-    }
-  };
-
-  const handleUpdateTask = async (id, data) => {
-    try {
-      const res = await updateTask(id, data);
-      setTasks(prev => prev.map(t => t.id === id ? res.data.task : t));
-      toast.success('Task updated!');
-      setEditingTask(null);
-    } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to update task.');
-    }
-  };
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleStatusChange = async (taskId, newStatus) => {
-    // Optimistic update
     setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
     try {
-      const res = await updateTask(taskId, { status: newStatus });
-      setTasks(prev => prev.map(t => t.id === taskId ? res.data.task : t));
+      await updateTask(taskId, { status: newStatus });
+      toast.success('Task updated!');
     } catch (err) {
-      // Revert on error
-      fetchTasks();
-      toast.error(err.response?.data?.error || 'Failed to update status.');
+      toast.error('Failed to update task status.');
+      fetchData();
     }
   };
 
@@ -71,8 +60,24 @@ export default function Board() {
     }
   };
 
+  const handleSaveTask = async (formData) => {
+    try {
+      if (editingTask) {
+        const res = await updateTask(editingTask.id, formData);
+        setTasks(prev => prev.map(t => t.id === editingTask.id ? res.data.task : t));
+        toast.success('Task updated!');
+      } else {
+        const res = await createTask(formData);
+        setTasks(prev => [res.data.task, ...prev]);
+        toast.success('Task created!');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to save task.');
+    }
+  };
+
   const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Delete this task?')) return;
+    if (!window.confirm('Are you sure you want to delete this task?')) return;
     try {
       await deleteTask(taskId);
       setTasks(prev => prev.filter(t => t.id !== taskId));
@@ -82,68 +87,94 @@ export default function Board() {
     }
   };
 
-  const todoCount = tasks.filter(t => t.status === 'todo').length;
-  const doingCount = tasks.filter(t => t.status === 'doing').length;
-  const doneCount = tasks.filter(t => t.status === 'done').length;
-
-  if (loading) {
-    return (
-      <div className="spinner-page">
-        <div className="spinner" />
-        <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Loading your board...</p>
-      </div>
-    );
-  }
+  // Filter tasks by search query & assignee
+  const filteredTasks = tasks.filter(t => {
+    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (t.description && t.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    
+    if (filterAssignee === 'me') {
+      return matchesSearch && t.assigned_to === user.id;
+    }
+    if (filterAssignee === 'unassigned') {
+      return matchesSearch && !t.assigned_to;
+    }
+    return matchesSearch;
+  });
 
   return (
-    <>
-      <Navbar />
-      <div className="board-page">
-        <div className="board-header">
-          <div>
-            <h2>📋 My Task Board</h2>
-            <p>
-              {tasks.length} task{tasks.length !== 1 ? 's' : ''} total &nbsp;·&nbsp;
-              {todoCount} todo &nbsp;·&nbsp;
-              {doingCount} in progress &nbsp;·&nbsp;
-              {doneCount} done
-            </p>
+    <Layout>
+      <div className="page-container">
+        {/* Header Bar */}
+        <div className="page-header">
+          <div className="page-title-group">
+            <h2>My Tasks</h2>
+            <p>Manage and track team workflow across stages.</p>
           </div>
-          <button
-            id="create-task-btn"
-            className="btn btn-primary"
-            onClick={() => setShowModal(true)}
-          >
-            + New Task
-          </button>
+
+          <div className="page-actions">
+            {/* Search */}
+            <div className="search-wrapper">
+              <Search className="search-icon" />
+              <input
+                className="form-input search-input"
+                type="text"
+                placeholder="Search tasks..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: 200 }}
+              />
+            </div>
+
+            {/* Filter */}
+            <select
+              className="form-select"
+              value={filterAssignee}
+              onChange={(e) => setFilterAssignee(e.target.value)}
+              style={{ width: 'auto' }}
+            >
+              <option value="all">All Tasks</option>
+              <option value="me">Assigned to Me</option>
+              <option value="unassigned">Unassigned</option>
+            </select>
+
+            {/* Create Task Primary Button */}
+            <button
+              id="create-task-btn"
+              className="btn btn-primary"
+              onClick={() => { setEditingTask(null); setModalOpen(true); }}
+            >
+              <Plus size={16} />
+              <span>Create Task</span>
+            </button>
+          </div>
         </div>
 
-        <KanbanBoard
-          tasks={tasks}
-          user={user}
-          onStatusChange={handleStatusChange}
-          onEdit={(task) => setEditingTask(task)}
-          onDelete={handleDeleteTask}
-          onAssignSelf={handleAssignSelf}
-        />
+        {/* Kanban Board Container */}
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading tasks...
+          </div>
+        ) : (
+          <KanbanBoard
+            tasks={filteredTasks}
+            user={user}
+            onStatusChange={handleStatusChange}
+            onEditTask={(task) => { setEditingTask(task); setModalOpen(true); }}
+            onDeleteTask={handleDeleteTask}
+            onAssignSelf={handleAssignSelf}
+            onCreateTask={() => { setEditingTask(null); setModalOpen(true); }}
+          />
+        )}
       </div>
 
-      {showModal && (
-        <TaskModal
-          title="Create New Task"
-          onSubmit={handleCreateTask}
-          onClose={() => setShowModal(false)}
-        />
-      )}
-
-      {editingTask && (
-        <TaskModal
-          title="Edit Task"
-          initialData={editingTask}
-          onSubmit={(data) => handleUpdateTask(editingTask.id, data)}
-          onClose={() => setEditingTask(null)}
-        />
-      )}
-    </>
+      <TaskModal
+        isOpen={modalOpen}
+        onClose={() => { setModalOpen(false); setEditingTask(null); }}
+        onSubmit={handleSaveTask}
+        initialTask={editingTask}
+        users={users}
+        isAdmin={user?.role === 'admin'}
+      />
+    </Layout>
   );
 }

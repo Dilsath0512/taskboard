@@ -1,78 +1,83 @@
 import { useState } from 'react';
 import TaskCard from './TaskCard';
+import { ClipboardList, Plus } from 'lucide-react';
 
 const COLUMNS = [
-  { id: 'todo',  label: 'To Do',       colClass: 'col-todo'  },
-  { id: 'doing', label: 'In Progress',  colClass: 'col-doing' },
-  { id: 'done',  label: 'Done',         colClass: 'col-done'  },
+  { id: 'todo', title: 'To Do', colClass: 'col-todo' },
+  { id: 'doing', title: 'In Progress', colClass: 'col-doing' },
+  { id: 'done', title: 'Done', colClass: 'col-done' },
 ];
 
-export default function KanbanBoard({ tasks, user, onStatusChange, onEdit, onDelete, onAssignSelf }) {
+export default function KanbanBoard({ tasks, user, onStatusChange, onEditTask, onDeleteTask, onAssignSelf, onCreateTask }) {
+  const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [dragOverCol, setDragOverCol] = useState(null);
-  const [draggingId, setDraggingId] = useState(null);
 
   const handleDragStart = (e, taskId) => {
-    e.dataTransfer.setData('taskId', taskId);
-    e.dataTransfer.effectAllowed = 'move';
-    setDraggingId(taskId);
+    e.dataTransfer.setData('text/plain', taskId);
+    setDraggedTaskId(taskId);
   };
 
   const handleDragEnd = () => {
-    setDraggingId(null);
+    setDraggedTaskId(null);
+    setDragOverCol(null);
   };
 
   const handleDragOver = (e, colId) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverCol(colId);
+    if (dragOverCol !== colId) setDragOverCol(colId);
   };
 
-  const handleDragLeave = () => {
-    setDragOverCol(null);
-  };
-
-  const handleDrop = (e, newStatus) => {
+  const handleDrop = (e, targetStatus) => {
     e.preventDefault();
     setDragOverCol(null);
-    const taskId = e.dataTransfer.getData('taskId');
+    const taskId = e.dataTransfer.getData('text/plain') || draggedTaskId;
     if (!taskId) return;
-
     const task = tasks.find(t => t.id === taskId);
-    if (!task || task.status === newStatus) return;
-
-    onStatusChange(taskId, newStatus);
+    if (task && task.status !== targetStatus) {
+      onStatusChange(taskId, targetStatus);
+    }
   };
 
-  const getColumnTasks = (status) => tasks.filter(t => t.status === status);
-
   return (
-    <div className="kanban-board">
+    <div className="kanban-board" id="kanban-board">
       {COLUMNS.map(col => {
-        const colTasks = getColumnTasks(col.id);
+        const colTasks = tasks.filter(t => t.status === col.id);
+        const isOver = dragOverCol === col.id;
+
         return (
           <div
             key={col.id}
-            id={`column-${col.id}`}
-            className={`kanban-column ${col.colClass} ${dragOverCol === col.id ? 'drag-over' : ''}`}
+            id={`col-${col.id}`}
+            className={`kanban-column ${col.colClass} ${isOver ? 'drag-over' : ''}`}
             onDragOver={(e) => handleDragOver(e, col.id)}
-            onDragLeave={handleDragLeave}
             onDrop={(e) => handleDrop(e, col.id)}
           >
             <div className="column-header">
               <div className="column-title">
-                <div className="column-dot" />
-                <span>{col.label}</span>
+                <span className="column-dot" />
+                <span>{col.title}</span>
               </div>
               <span className="column-count">{colTasks.length}</span>
             </div>
 
             <div className="column-cards">
               {colTasks.length === 0 ? (
-                <div className="empty-state" style={{ padding: '24px 12px' }}>
-                  <div className="empty-state-icon" style={{ fontSize: 28 }}>
-                    {col.id === 'todo' ? '📝' : col.id === 'doing' ? '⚡' : '🎉'}
+                <div className="empty-state">
+                  <div className="empty-state-icon-box">
+                    <ClipboardList size={20} />
                   </div>
-                  <p>Drop tasks here</p>
+                  <h4>No tasks in {col.title}</h4>
+                  <p>Create a new task or move an existing task here.</p>
+                  {col.id === 'todo' && onCreateTask && (
+                    <button
+                      className="btn btn-secondary btn-sm"
+                      onClick={onCreateTask}
+                      style={{ marginTop: 4 }}
+                    >
+                      <Plus size={13} />
+                      <span>Add Task</span>
+                    </button>
+                  )}
                 </div>
               ) : (
                 colTasks.map(task => (
@@ -80,11 +85,11 @@ export default function KanbanBoard({ tasks, user, onStatusChange, onEdit, onDel
                     key={task.id}
                     task={task}
                     user={user}
-                    isDragging={draggingId === task.id}
+                    isDragging={draggedTaskId === task.id}
                     onDragStart={handleDragStart}
                     onDragEnd={handleDragEnd}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
                     onAssignSelf={onAssignSelf}
                   />
                 ))

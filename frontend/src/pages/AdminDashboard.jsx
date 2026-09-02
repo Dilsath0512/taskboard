@@ -1,21 +1,31 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getAllUsers, getTasks, assignTask, updateTask, deleteTask, updateUserRole, deleteUser } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
+import Layout from '../components/Layout';
 import toast from 'react-hot-toast';
-import Navbar from '../components/Navbar';
-
-const STATUS_COLORS = {
-  todo: { bg: 'var(--todo-bg)', color: 'var(--todo-color)', label: 'To Do' },
-  doing: { bg: 'var(--doing-bg)', color: 'var(--doing-color)', label: 'Doing' },
-  done: { bg: 'var(--done-bg)', color: 'var(--done-color)', label: 'Done' },
-};
+import {
+  Users,
+  CheckSquare,
+  Clock,
+  CheckCircle2,
+  Search,
+  MoreVertical,
+  Trash2,
+  UserCheck,
+  Shield,
+  Activity,
+  Layers,
+  Calendar
+} from 'lucide-react';
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [users, setUsers] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('tasks');
+  const [activeTab, setActiveTab] = useState('users');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeMenuId, setActiveMenuId] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -23,7 +33,7 @@ export default function AdminDashboard() {
       setUsers(usersRes.data.users);
       setTasks(tasksRes.data.tasks);
     } catch {
-      toast.error('Failed to load data.');
+      toast.error('Failed to load dashboard data.');
     } finally {
       setLoading(false);
     }
@@ -35,7 +45,7 @@ export default function AdminDashboard() {
     try {
       const res = await assignTask(taskId, { assigned_to: userId || null });
       setTasks(prev => prev.map(t => t.id === taskId ? res.data.task : t));
-      toast.success('Task assignment updated!');
+      toast.success('Assignment updated');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to assign task.');
     }
@@ -45,7 +55,7 @@ export default function AdminDashboard() {
     try {
       const res = await updateTask(taskId, { status });
       setTasks(prev => prev.map(t => t.id === taskId ? res.data.task : t));
-      toast.success('Status updated!');
+      toast.success('Status updated');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update status.');
     }
@@ -56,7 +66,7 @@ export default function AdminDashboard() {
     try {
       await deleteTask(taskId);
       setTasks(prev => prev.filter(t => t.id !== taskId));
-      toast.success('Task deleted.');
+      toast.success('Task deleted');
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete task.');
     }
@@ -66,7 +76,8 @@ export default function AdminDashboard() {
     try {
       const res = await updateUserRole(userId, role);
       setUsers(prev => prev.map(u => u.id === userId ? { ...u, role: res.data.user.role } : u));
-      toast.success('Role updated!');
+      toast.success('User role updated');
+      setActiveMenuId(null);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to update role.');
     }
@@ -77,266 +88,346 @@ export default function AdminDashboard() {
     try {
       await deleteUser(userId);
       setUsers(prev => prev.filter(u => u.id !== userId));
-      // Refresh tasks in case user's assigned tasks changed
       const tasksRes = await getTasks();
       setTasks(tasksRes.data.tasks);
-      toast.success(`User "${userName}" deleted successfully.`);
+      toast.success(`User "${userName}" deleted.`);
+      setActiveMenuId(null);
     } catch (err) {
       toast.error(err.response?.data?.error || 'Failed to delete user.');
     }
   };
 
-  if (loading) {
-    return (
-      <div className="spinner-page">
-        <div className="spinner" />
-        <p style={{ color: 'var(--text-secondary)', fontSize: 14 }}>Loading admin data...</p>
-      </div>
-    );
-  }
-
-  const totalAssigned = tasks.filter(t => t.assigned_to).length;
+  // Metrics calculation
+  const totalUsers = users.length;
+  const totalTasks = tasks.length;
   const todoCount = tasks.filter(t => t.status === 'todo').length;
   const doingCount = tasks.filter(t => t.status === 'doing').length;
   const doneCount = tasks.filter(t => t.status === 'done').length;
 
+  const getPercent = (count) => totalTasks === 0 ? 0 : Math.round((count / totalTasks) * 100);
+
+  // Filtered Lists
+  const filteredUsers = users.filter(u =>
+    u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    u.email.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredTasks = tasks.filter(t =>
+    t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (t.creator_name && t.creator_name.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
+  const getInitial = (name) => name?.[0]?.toUpperCase() || 'U';
+
   return (
-    <>
-      <Navbar />
-      <div className="admin-page">
+    <Layout>
+      <div className="page-container">
         {/* Header */}
-        <div className="admin-header">
-          <h2>🛡️ Admin Dashboard</h2>
-          <p>Full system control — manage all users and tasks</p>
+        <div className="page-header">
+          <div className="page-title-group">
+            <h2>Admin Overview</h2>
+            <p>Monitor users, tasks, and workspace activity.</p>
+          </div>
+
+          <div className="page-actions">
+            <div className="search-wrapper">
+              <Search className="search-icon" />
+              <input
+                className="form-input search-input"
+                type="text"
+                placeholder={activeTab === 'users' ? 'Search users...' : 'Search tasks...'}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ width: 220 }}
+              />
+            </div>
+          </div>
         </div>
 
-        {/* Stats */}
+        {/* Metrics Grid */}
         <div className="stats-grid">
           <div className="stat-card">
-            <div className="stat-icon" style={{ background: 'rgba(124,58,237,0.15)' }}>👥</div>
-            <div className="stat-info">
-              <div className="stat-value" style={{ color: 'var(--accent-purple-light)' }}>{users.length}</div>
+            <div className="stat-icon-box">
+              <Users size={18} />
+            </div>
+            <div>
+              <div className="stat-value">{totalUsers}</div>
               <div className="stat-label">Total Users</div>
             </div>
           </div>
+
           <div className="stat-card">
-            <div className="stat-icon" style={{ background: 'rgba(59,130,246,0.15)' }}>📋</div>
-            <div className="stat-info">
-              <div className="stat-value" style={{ color: 'var(--accent-blue)' }}>{tasks.length}</div>
+            <div className="stat-icon-box">
+              <CheckSquare size={18} />
+            </div>
+            <div>
+              <div className="stat-value">{totalTasks}</div>
               <div className="stat-label">Total Tasks</div>
             </div>
           </div>
+
           <div className="stat-card">
-            <div className="stat-icon" style={{ background: 'rgba(245,158,11,0.15)' }}>⚡</div>
-            <div className="stat-info">
-              <div className="stat-value" style={{ color: 'var(--doing-color)' }}>{doingCount}</div>
+            <div className="stat-icon-box" style={{ color: 'var(--status-doing)' }}>
+              <Clock size={18} />
+            </div>
+            <div>
+              <div className="stat-value">{doingCount}</div>
               <div className="stat-label">In Progress</div>
             </div>
           </div>
+
           <div className="stat-card">
-            <div className="stat-icon" style={{ background: 'rgba(16,185,129,0.15)' }}>✅</div>
-            <div className="stat-info">
-              <div className="stat-value" style={{ color: 'var(--accent-green)' }}>{doneCount}</div>
+            <div className="stat-icon-box" style={{ color: 'var(--status-done)' }}>
+              <CheckCircle2 size={18} />
+            </div>
+            <div>
+              <div className="stat-value">{doneCount}</div>
               <div className="stat-label">Completed</div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="nav-tabs" style={{ width: 'fit-content' }}>
+        {/* Two-Column Analytics Grid */}
+        <div className="dashboard-analytics-grid">
+          {/* Left: Task Status Overview */}
+          <div className="analytics-card">
+            <span className="analytics-card-title">
+              <Layers size={16} />
+              <span>Task Status Distribution</span>
+            </span>
+            <div className="progress-bar-group">
+              <div className="progress-item">
+                <div className="progress-info">
+                  <span>To Do</span>
+                  <span>{todoCount} ({getPercent(todoCount)}%)</span>
+                </div>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${getPercent(todoCount)}%`, backgroundColor: 'var(--status-todo)' }} />
+                </div>
+              </div>
+
+              <div className="progress-item">
+                <div className="progress-info">
+                  <span>In Progress</span>
+                  <span>{doingCount} ({getPercent(doingCount)}%)</span>
+                </div>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${getPercent(doingCount)}%`, backgroundColor: 'var(--status-doing)' }} />
+                </div>
+              </div>
+
+              <div className="progress-item">
+                <div className="progress-info">
+                  <span>Done</span>
+                  <span>{doneCount} ({getPercent(doneCount)}%)</span>
+                </div>
+                <div className="progress-track">
+                  <div className="progress-fill" style={{ width: `${getPercent(doneCount)}%`, backgroundColor: 'var(--status-done)' }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Right: Recent Activity Log */}
+          <div className="analytics-card">
+            <span className="analytics-card-title">
+              <Activity size={16} />
+              <span>Recent Workspace Activity</span>
+            </span>
+            <div className="activity-feed">
+              {tasks.slice(0, 4).map((t) => (
+                <div className="activity-item" key={t.id}>
+                  <div className="task-avatar-small">{getInitial(t.creator_name)}</div>
+                  <div className="activity-text truncate">
+                    <strong>{t.creator_name || 'System'}</strong> created task "{t.title}"
+                  </div>
+                  <span className="activity-time">
+                    {new Date(t.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                  </span>
+                </div>
+              ))}
+              {tasks.length === 0 && (
+                <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>No recent activity.</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div style={{ display: 'flex', gap: 10, borderBottom: '1px solid var(--border-subtle)', paddingBottom: 12 }}>
           <button
-            id="tab-tasks"
-            className={`nav-tab ${activeTab === 'tasks' ? 'active' : ''}`}
-            onClick={() => setActiveTab('tasks')}
-          >
-            📋 All Tasks ({tasks.length})
-          </button>
-          <button
-            id="tab-users"
-            className={`nav-tab ${activeTab === 'users' ? 'active' : ''}`}
+            className={`btn ${activeTab === 'users' ? 'btn-secondary' : 'btn-ghost'}`}
             onClick={() => setActiveTab('users')}
           >
-            👥 All Users ({users.length})
+            <Users size={14} />
+            <span>Workspace Members ({users.length})</span>
+          </button>
+          <button
+            className={`btn ${activeTab === 'tasks' ? 'btn-secondary' : 'btn-ghost'}`}
+            onClick={() => setActiveTab('tasks')}
+          >
+            <CheckSquare size={14} />
+            <span>All Tasks ({tasks.length})</span>
           </button>
         </div>
 
-        {/* Tasks Table */}
-        {activeTab === 'tasks' && (
-          <div className="table-container">
-            <div className="table-header">
-              <div>
-                <h3>All Tasks</h3>
-                <p>{tasks.length} tasks across all users</p>
-              </div>
-            </div>
-            {tasks.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">📭</div>
-                <p>No tasks yet.</p>
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table id="admin-tasks-table">
-                  <thead>
-                    <tr>
-                      <th>Task</th>
-                      <th>Status</th>
-                      <th>Creator</th>
-                      <th>Assigned To</th>
-                      <th>Created</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {tasks.map(task => (
-                      <tr key={task.id}>
-                        <td>
-                          <div style={{ fontWeight: 600 }}>{task.title}</div>
-                          {task.description && (
-                            <div style={{ fontSize: 12, color: 'var(--text-secondary)', marginTop: 2, maxWidth: 250, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                              {task.description}
-                            </div>
-                          )}
-                        </td>
-                        <td>
-                          <select
-                            className="form-select"
-                            value={task.status}
-                            onChange={(e) => handleStatusChange(task.id, e.target.value)}
-                            style={{ padding: '4px 28px 4px 10px', fontSize: 12, width: 'auto', borderRadius: 20 }}
-                          >
-                            <option value="todo">To Do</option>
-                            <option value="doing">Doing</option>
-                            <option value="done">Done</option>
-                          </select>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <div className="task-avatar">{task.creator_name?.[0]?.toUpperCase()}</div>
-                            <span style={{ fontSize: 12 }}>{task.creator_name}</span>
-                          </div>
-                        </td>
-                        <td>
-                          <select
-                            className="form-select"
-                            value={task.assigned_to || ''}
-                            onChange={(e) => handleAssign(task.id, e.target.value || null)}
-                            style={{ padding: '4px 28px 4px 10px', fontSize: 12, width: 'auto', minWidth: 140 }}
-                          >
-                            <option value="">Unassigned</option>
-                            {users.map(u => (
-                              <option key={u.id} value={u.id}>{u.name}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                          {new Date(task.created_at).toLocaleDateString()}
-                        </td>
-                        <td>
-                          <button
-                            className="btn btn-danger btn-sm"
-                            onClick={() => handleDeleteTask(task.id)}
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+        {/* Table Content */}
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-muted)' }}>
+            Loading dashboard data...
           </div>
-        )}
-
-        {/* Users Table */}
-        {activeTab === 'users' && (
+        ) : activeTab === 'users' ? (
+          /* Users Table */
           <div className="table-container">
-            <div className="table-header">
-              <div>
-                <h3>All Users</h3>
-                <p>{users.length} registered users</p>
-              </div>
-            </div>
-            {users.length === 0 ? (
-              <div className="empty-state">
-                <div className="empty-state-icon">👤</div>
-                <p>No users yet.</p>
-              </div>
-            ) : (
-              <div style={{ overflowX: 'auto' }}>
-                <table id="admin-users-table">
-                  <thead>
-                    <tr>
-                      <th>User</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Tasks Created</th>
-                      <th>Tasks Assigned</th>
-                      <th>Joined</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map(u => (
-                      <tr key={u.id}>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div className="task-avatar" style={{ width: 32, height: 32, fontSize: 13 }}>
-                              {u.name?.[0]?.toUpperCase()}
-                            </div>
-                            <div>
-                              <div style={{ fontWeight: 600, fontSize: 13 }}>
-                                {u.name}
-                                {u.id === user.id && <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--accent-purple-light)' }}>(you)</span>}
-                              </div>
-                            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th style={{ textAlign: 'center' }}>Tasks Created</th>
+                  <th style={{ textAlign: 'center' }}>Tasks Assigned</th>
+                  <th>Joined</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredUsers.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <div className="user-avatar" style={{ width: 28, height: 28, fontSize: 11 }}>
+                          {getInitial(u.name)}
+                        </div>
+                        <div>
+                          <div style={{ fontWeight: 600, fontSize: 13 }}>
+                            {u.name}
+                            {u.id === user.id && (
+                              <span style={{ marginLeft: 6, fontSize: 10, color: 'var(--accent-primary-hover)' }}>(you)</span>
+                            )}
                           </div>
-                        </td>
-                        <td style={{ color: 'var(--text-secondary)', fontSize: 12 }}>{u.email}</td>
-                        <td>
-                          <span className={`role-badge ${u.role}`}>
-                            {u.role === 'admin' ? '🛡️' : '👤'} {u.role}
-                          </span>
-                        </td>
-                        <td style={{ textAlign: 'center' }}>{u.tasks_created}</td>
-                        <td style={{ textAlign: 'center' }}>{u.tasks_assigned}</td>
-                        <td style={{ color: 'var(--text-muted)', fontSize: 12 }}>
-                          {new Date(u.created_at).toLocaleDateString()}
-                        </td>
-                        <td>
-                          {u.id !== user.id ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                              <select
-                                className="form-select"
-                                value={u.role}
-                                onChange={(e) => handleRoleChange(u.id, e.target.value)}
-                                style={{ padding: '4px 28px 4px 10px', fontSize: 12, width: 'auto' }}
-                              >
-                                <option value="user">User</option>
-                                <option value="admin">Admin</option>
-                              </select>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{u.email}</td>
+                    <td>
+                      <span className={`badge ${u.role === 'admin' ? 'badge-admin' : 'badge-user'}`}>
+                        {u.role === 'admin' ? <Shield size={11} /> : <UserCheck size={11} />}
+                        <span>{u.role}</span>
+                      </span>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>{u.tasks_created}</td>
+                    <td style={{ textAlign: 'center' }}>{u.tasks_assigned}</td>
+                    <td style={{ color: 'var(--text-muted)' }}>
+                      {new Date(u.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{ textAlign: 'right', position: 'relative' }}>
+                      {u.id !== user.id ? (
+                        <div>
+                          <button
+                            className="btn btn-ghost btn-icon btn-sm"
+                            onClick={() => setActiveMenuId(activeMenuId === u.id ? null : u.id)}
+                          >
+                            <MoreVertical size={15} />
+                          </button>
+                          {activeMenuId === u.id && (
+                            <div className="dropdown-menu">
                               <button
-                                className="btn btn-danger btn-sm"
-                                onClick={() => handleDeleteUser(u.id, u.name)}
-                                title={`Delete user ${u.name}`}
+                                className="dropdown-item"
+                                onClick={() => handleRoleChange(u.id, u.role === 'admin' ? 'user' : 'admin')}
                               >
-                                🗑️ Remove
+                                <Shield size={13} />
+                                <span>Make {u.role === 'admin' ? 'User' : 'Admin'}</span>
+                              </button>
+                              <button
+                                className="dropdown-item danger"
+                                onClick={() => handleDeleteUser(u.id, u.name)}
+                              >
+                                <Trash2 size={13} />
+                                <span>Remove User</span>
                               </button>
                             </div>
-                          ) : (
-                            <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>—</span>
                           )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)' }}>—</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* Tasks Table */
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Task Title</th>
+                  <th>Status</th>
+                  <th>Creator</th>
+                  <th>Assignee</th>
+                  <th>Created</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTasks.map((t) => (
+                  <tr key={t.id}>
+                    <td>
+                      <div style={{ fontWeight: 600, fontSize: 13 }}>{t.title}</div>
+                      {t.description && (
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }} className="truncate">
+                          {t.description}
+                        </div>
+                      )}
+                    </td>
+                    <td>
+                      <select
+                        className="form-select"
+                        value={t.status}
+                        onChange={(e) => handleStatusChange(t.id, e.target.value)}
+                        style={{ padding: '4px 24px 4px 8px', fontSize: 11, width: 'auto' }}
+                      >
+                        <option value="todo">To Do</option>
+                        <option value="doing">In Progress</option>
+                        <option value="done">Done</option>
+                      </select>
+                    </td>
+                    <td style={{ color: 'var(--text-secondary)' }}>{t.creator_name || 'System'}</td>
+                    <td>
+                      <select
+                        className="form-select"
+                        value={t.assigned_to || ''}
+                        onChange={(e) => handleAssign(t.id, e.target.value)}
+                        style={{ padding: '4px 24px 4px 8px', fontSize: 11, width: 'auto' }}
+                      >
+                        <option value="">Unassigned</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>{u.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td style={{ color: 'var(--text-muted)' }}>
+                      {new Date(t.created_at).toLocaleDateString()}
+                    </td>
+                    <td style={{ textAlign: 'right' }}>
+                      <button
+                        className="btn btn-danger btn-icon btn-sm"
+                        onClick={() => handleDeleteTask(t.id)}
+                        title="Delete Task"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
-    </>
+    </Layout>
   );
 }
